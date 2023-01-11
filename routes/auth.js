@@ -21,17 +21,18 @@ router.post(
     body("password", "password is too short").isLength({ min: 5 }),
   ],
   async (req, res) => {
+    let success = false;
     //send bad request and error for invalid values
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ success, errors: errors.array() });
     }
 
     try {
       //check whether email already exist in database
       let user = await User.findOne({ email: req.body.email });
       if (user) {
-        return res.status(400).json({ error: "Email already exits" });
+        return res.status(400).json({ success, error: "Email already exits" });
       }
 
       //hashing
@@ -52,11 +53,13 @@ router.post(
         },
       };
       const authtoken = jwt.sign(data, JWT_SECRET);
-
-      res.json({ authtoken });
+      success = true;
+      res.json({ success, authtoken });
     } catch (error) {
       console.error(error.message);
-      res.status(500).send("Some error occured: Its not you its us!");
+      res
+        .status(500)
+        .send({ success, message: "Some error occured: Its not you its us!" });
     }
   }
 );
@@ -70,6 +73,7 @@ router.post(
     body("password", "Password cannot be blank.").exists(),
   ],
   async (req, res) => {
+    let success = false;
     //send bad request and error for invalid values
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -82,11 +86,15 @@ router.post(
       //check for email
       let user = await User.findOne({ email });
       if (!user) {
-        return res.status(400).json({ error: "Email not registered yet!" });
+        return res
+          .status(400)
+          .json({ success, error: "Email not registered yet!" });
       }
       const passwordCompare = await bcryptjs.compare(password, user.password);
       if (!passwordCompare) {
-        return res.status(400).json({ error: "Incorrect Credentials." });
+        return res
+          .status(400)
+          .json({ success, error: "Incorrect Credentials." });
       }
       const data = {
         user: {
@@ -94,23 +102,30 @@ router.post(
         },
       };
       const authtoken = jwt.sign(data, JWT_SECRET);
-      res.json({ authtoken });
+      success = true;
+      res.json({ success, authtoken });
     } catch (error) {
       console.error(error.message);
-      res.status(500).send("Some error occured: Its not you its us!");
+      res
+        .status(500)
+        .send({ success, message: "Some error occured: Its not you its us!" });
     }
   }
 );
 
 //Route 3: Get user data using token authentication
 router.get("/getuser", fetchUser, async (req, res) => {
+  let success = false;
   try {
     const userId = req.user.id;
     const user = await User.findById(userId).select("-password");
-    res.send(user);
+    success = true;
+    res.send({ success, user });
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Some error occured: Its not you its us!");
+    res
+      .status(500)
+      .send({ success, message: "Some error occured: Its not you its us!" });
   }
 });
 
