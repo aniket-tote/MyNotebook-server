@@ -32,7 +32,7 @@ router.post(
       //check whether email already exist in database
       let user = await User.findOne({ email: req.body.email });
       if (user) {
-        return res.status(400).json({ success, error: "Email already exits" });
+        return res.status(400).json({ success, error: "Email already exist" });
       }
 
       //hashing
